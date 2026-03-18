@@ -51,7 +51,7 @@ public class CartController {
         	}
         	return new ResponseEntity<List<Object>>(
         			cart,
-        			headerGenerator.getHeadersForSuccessPostMethod(request, Long.parseLong(cartId)),
+        			headerGenerator.getHeadersForSuccessPostMethod(request, cartId),
         			HttpStatus.CREATED);
         }
         return new ResponseEntity<List<Object>>(

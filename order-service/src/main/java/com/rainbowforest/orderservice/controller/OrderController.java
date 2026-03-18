@@ -71,4 +71,66 @@ public class OrderController {
         order.setStatus("PAYMENT_EXPECTED");
         return order;
     }
+
+    // ==========================================
+    // CÁC API DÀNH CHO ADMIN QUẢN LÝ ĐƠN HÀNG
+    // ==========================================
+
+    // 1. Lấy danh sách toàn bộ đơn hàng
+    @GetMapping(value = "/orders")
+    public ResponseEntity<List<Order>> getAllOrders(){
+        List<Order> orders = orderService.getAllOrders();
+        if(!orders.isEmpty()) {
+            return new ResponseEntity<List<Order>>(
+                    orders,
+                    headerGenerator.getHeadersForSuccessGetMethod(),
+                    HttpStatus.OK);
+        }
+        return new ResponseEntity<List<Order>>(
+                headerGenerator.getHeadersForError(),
+                HttpStatus.NOT_FOUND);
+    }
+
+    // 2. Lấy thông tin chi tiết của 1 đơn hàng
+    @GetMapping(value = "/orders/{id}")
+    public ResponseEntity<Order> getOrderById(@PathVariable("id") Long id){
+        Order order = orderService.getOrderById(id);
+        if(order != null) {
+            return new ResponseEntity<Order>(
+                    order,
+                    headerGenerator.getHeadersForSuccessGetMethod(),
+                    HttpStatus.OK);
+        }
+        return new ResponseEntity<Order>(
+                headerGenerator.getHeadersForError(),
+                HttpStatus.NOT_FOUND);
+    }
+
+    // 3. Cập nhật trạng thái đơn hàng (Ví dụ: SHIPPING, DELIVERED, CANCELED)
+    @PostMapping(value = "/orders/{id}/status")
+    public ResponseEntity<Order> updateOrderStatus(
+            @PathVariable("id") Long id, 
+            @RequestParam("status") String status,
+            HttpServletRequest request) {
+        
+        Order order = orderService.getOrderById(id);
+        if(order != null) {
+            try {
+                order.setStatus(status); // Cập nhật trạng thái mới
+                orderService.saveOrder(order); // Lưu lại vào Database
+                return new ResponseEntity<Order>(
+                        order,
+                        headerGenerator.getHeadersForSuccessPostMethod(request, order.getId()),
+                        HttpStatus.OK);
+            } catch (Exception e) {
+                e.printStackTrace();
+                return new ResponseEntity<Order>(
+                        headerGenerator.getHeadersForError(),
+                        HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+        }
+        return new ResponseEntity<Order>(
+                headerGenerator.getHeadersForError(),
+                HttpStatus.NOT_FOUND);
+    }
 }

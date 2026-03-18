@@ -1,5 +1,7 @@
 package com.rainbowforest.orderservice.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
@@ -8,6 +10,7 @@ import java.util.List;
 
 @Entity
 @Table (name = "orders")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Order {
 
     @Id

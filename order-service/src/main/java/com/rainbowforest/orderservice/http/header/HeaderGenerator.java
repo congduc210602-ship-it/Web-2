@@ -21,7 +21,7 @@ public class HeaderGenerator {
 		return httpHeaders;
 	}
 	
-	public HttpHeaders getHeadersForSuccessPostMethod(HttpServletRequest request, Long newResourceId) {
+	public HttpHeaders getHeadersForSuccessPostMethod(HttpServletRequest request, Object newResourceId) {
 		HttpHeaders httpHeaders = new HttpHeaders();
 		try {
 			httpHeaders.setLocation(new URI(request.getRequestURI() + "/" + newResourceId));
