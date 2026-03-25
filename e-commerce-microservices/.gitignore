@@ -1,0 +1,18 @@
+# Build folders
+target/
+bin/
+out/
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+
+# Maven
+.mvn/
+mvnw
+mvnw.cmd
+
+# Others
+.DS_Store
+*.log
