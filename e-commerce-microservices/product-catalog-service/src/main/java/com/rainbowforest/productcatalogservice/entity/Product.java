@@ -6,32 +6,35 @@ import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 
 @Entity
-@Table (name = "products")
-@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+@Table(name = "products")
+@JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 public class Product {
 
-    @Id
-    @GeneratedValue (strategy = GenerationType.IDENTITY)
-    private Long id;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 
-    @Column (name = "product_name")
-    @NotNull
-    private String productName;
+	@Column(name = "product_name")
+	@NotNull
+	private String productName;
 
-    @Column (name = "price")
-    @NotNull
-    private BigDecimal price;
+	@Column(name = "price")
+	@NotNull
+	private BigDecimal price;
 
-    @Column (name = "discription")
-    private String discription;
+	@Column(name = "description")
+	private String description;
 
-    @Column (name = "category")
-    @NotNull
-    private String category;
+	@Column(name = "category")
+	@NotNull
+	private String category;
 
-    @Column (name = "availability")
-    @NotNull
-    private int availability;
+	@Column(name = "availability")
+	@NotNull
+	private int availability;
+
+	@Column(name = "image_url")
+	private String imageUrl;
 
 	public Product() {
 
@@ -61,12 +64,12 @@ public class Product {
 		this.price = price;
 	}
 
-	public String getDiscription() {
-		return discription;
+	public String getDescription() {
+		return description;
 	}
 
-	public void setDiscription(String discription) {
-		this.discription = discription;
+	public void setDescription(String description) {
+		this.description = description;
 	}
 
 	public String getCategory() {
@@ -77,11 +80,19 @@ public class Product {
 		this.category = category;
 	}
 
+	public String getImageUrl() {
+		return imageUrl;
+	}
+
+	public void setImageUrl(String imageUrl) {
+		this.imageUrl = imageUrl;
+	}
+
 	public int getAvailability() {
 		return availability;
 	}
 
 	public void setAvailability(int availability) {
 		this.availability = availability;
-	} 
+	}
 }

@@ -63,4 +63,14 @@ public class UserServiceImpl implements UserService {
 
         return true;
     }
+
+    @Override
+    public User checkLogin(String userName, String userPassword) {
+        User user = userRepository.findByUserName(userName);
+        // Kiểm tra user có tồn tại và mật khẩu có khớp không
+        if (user != null && user.getUserPassword().equals(userPassword)) {
+            return user;
+        }
+        return null;
+    }
 }

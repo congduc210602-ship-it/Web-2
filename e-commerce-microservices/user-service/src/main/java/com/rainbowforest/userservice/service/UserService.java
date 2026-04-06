@@ -10,4 +10,5 @@ public interface UserService {
     User getUserByName(String userName);
     User saveUser(User user);
     boolean deductBalance(Long userId, java.math.BigDecimal amount);
+    User checkLogin(String userName, String userPassword);
 }

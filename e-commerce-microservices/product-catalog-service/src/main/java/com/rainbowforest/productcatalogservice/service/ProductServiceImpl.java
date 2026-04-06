@@ -43,4 +43,10 @@ public class ProductServiceImpl implements ProductService {
     public void deleteProduct(Long productId) {
         productRepository.deleteById(productId);
     }
+
+    @Override
+    public long countProducts() {
+        // Sử dụng hàm count() có sẵn của Spring JPA, nó sẽ chạy lệnh SELECT COUNT(*) cực nhanh
+        return productRepository.count(); 
+    }
 }
