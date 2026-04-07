@@ -27,8 +27,14 @@ public class RecommendationServiceImpl implements RecommendationService {
         recommendationRepository.deleteById(id);
     }
 
-	@Override
-	public Recommendation getRecommendationById(Long recommendationId) {
-		return recommendationRepository.getOne(recommendationId);
-	}
+    @Override
+    public Recommendation getRecommendationById(Long recommendationId) {
+        return recommendationRepository.getOne(recommendationId);
+    }
+
+    // === HÀM MỚI THÊM DÀNH CHO ADMIN ===
+    @Override
+    public List<Recommendation> getAllRecommendations() {
+        return recommendationRepository.findAll();
+    }
 }

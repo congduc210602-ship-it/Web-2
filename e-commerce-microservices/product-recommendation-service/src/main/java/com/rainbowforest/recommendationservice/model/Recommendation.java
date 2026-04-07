@@ -4,30 +4,32 @@ import lombok.NoArgsConstructor;
 import javax.persistence.*;
 
 @Entity
-@Table (name = "recommendation")
+@Table(name = "recommendation")
 public class Recommendation {
 
     @Id
-    @GeneratedValue (strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Column (name = "rating")
+    @Column(name = "rating")
     private int rating;
-
-    @ManyToOne (cascade = CascadeType.ALL)
-    @JoinColumn (name = "product_id")
+    @Column(name = "comment", columnDefinition = "NVARCHAR(MAX)")
+    private String comment;
+    @ManyToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "product_id")
 
     private Product product;
 
-    @ManyToOne (cascade = CascadeType.ALL)
-    @JoinColumn (name = "user_id")
+    @ManyToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "user_id")
     private User user;
-    
-    public Recommendation() {
-	
-	}
 
-	public Recommendation(int rating, Product product, User user) {
+    public Recommendation() {
+
+    }
+
+    public Recommendation(int rating, String comment, Product product, User user) {
         this.rating = rating;
+        this.comment = comment;
         this.product = product;
         this.user = user;
     }
@@ -46,6 +48,14 @@ public class Recommendation {
 
     public void setRating(int rating) {
         this.rating = rating;
+    }
+
+    public String getComment() {
+        return comment;
+    }
+
+    public void setComment(String comment) {
+        this.comment = comment;
     }
 
     public Product getProduct() {

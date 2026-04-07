@@ -14,7 +14,7 @@ public class Product {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@Column(name = "product_name")
+	@Column(name = "product_name", columnDefinition = "NVARCHAR(255)") // Đã thêm
 	@NotNull
 	private String productName;
 
@@ -22,10 +22,10 @@ public class Product {
 	@NotNull
 	private BigDecimal price;
 
-	@Column(name = "description")
+	@Column(name = "description", columnDefinition = "NVARCHAR(MAX)") // Dùng MAX cho mô tả dài
 	private String description;
 
-	@Column(name = "category")
+	@Column(name = "category", columnDefinition = "NVARCHAR(255)") // Đã thêm
 	@NotNull
 	private String category;
 

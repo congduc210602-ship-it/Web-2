@@ -1,5 +1,4 @@
 package com.rainbowforest.userservice.controller;
-
 import com.rainbowforest.userservice.entity.User;
 import com.rainbowforest.userservice.http.header.HeaderGenerator;
 import com.rainbowforest.userservice.service.UserService;
@@ -13,69 +12,78 @@ import java.util.List;
 @RestController
 public class UserController {
 
-    @Autowired
-    private UserService userService;
-    
-    @Autowired
-    private HeaderGenerator headerGenerator;
-    
-    @GetMapping (value = "/users")
-    public ResponseEntity<List<User>> getAllUsers(){
-        List<User> users =  userService.getAllUsers();
-        if(!users.isEmpty()) {
-        	return new ResponseEntity<List<User>>(
-        		users,
-        		headerGenerator.getHeadersForSuccessGetMethod(),
-        		HttpStatus.OK);
-        }
-        return new ResponseEntity<List<User>>(
-        		headerGenerator.getHeadersForError(),
-        		HttpStatus.NOT_FOUND);
-    }
+	@Autowired
+	private UserService userService;
 
-    @GetMapping (value = "/users", params = "name")
-    public ResponseEntity<User> getUserByName(@RequestParam("name") String userName){
-    	User user = userService.getUserByName(userName);
-    	if(user != null) {
-    		return new ResponseEntity<User>(
-    				user,
-    				headerGenerator.
-    				getHeadersForSuccessGetMethod(),
-    				HttpStatus.OK);
-    	}
-        return new ResponseEntity<User>(
-        		headerGenerator.getHeadersForError(),
-        		HttpStatus.NOT_FOUND);
-    }
+	@Autowired
+	private HeaderGenerator headerGenerator;
 
-    @GetMapping (value = "/users/{id}")
-    public ResponseEntity<User> getUserById(@PathVariable("id") Long id){
-        User user = userService.getUserById(id);
-        if(user != null) {
-    		return new ResponseEntity<User>(
-    				user,
-    				headerGenerator.
-    				getHeadersForSuccessGetMethod(),
-    				HttpStatus.OK);
-    	}
-        return new ResponseEntity<User>(
-        		headerGenerator.getHeadersForError(),
-        		HttpStatus.NOT_FOUND);
-    }
-
-    @PostMapping (value = "/users")
-    public ResponseEntity<User> addUser(@RequestBody User user, HttpServletRequest request){
-    	if(user != null)
-    		try {
-    			userService.saveUser(user);
-    			return new ResponseEntity<User>(
-    					user,
-    					headerGenerator.getHeadersForSuccessPostMethod(request, user.getId()),
-    					HttpStatus.CREATED);
-    		}catch (Exception e) {
-    			e.printStackTrace();
-    			return new ResponseEntity<User>(HttpStatus.INTERNAL_SERVER_ERROR);
+	// === API MỚI CHO DASHBOARD (Tránh đụng /users/{id}) ===
+	@GetMapping(value = "/users/dashboard/count")
+	public ResponseEntity<Long> getUsersCount() {
+		try {
+			long count = userService.getAllUsers().size();
+			return new ResponseEntity<>(count, HttpStatus.OK);
+		} catch (Exception e) {
+			return new ResponseEntity<>(0L, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
-    	return new ResponseEntity<User>(HttpStatus.BAD_REQUEST);
-    }
+	}
+
+	@GetMapping(value = "/users")
+	public ResponseEntity<List<User>> getAllUsers() {
+		List<User> users = userService.getAllUsers();
+		if (!users.isEmpty()) {
+			return new ResponseEntity<List<User>>(
+					users,
+					headerGenerator.getHeadersForSuccessGetMethod(),
+					HttpStatus.OK);
+		}
+		return new ResponseEntity<List<User>>(
+				headerGenerator.getHeadersForError(),
+				HttpStatus.NOT_FOUND);
+	}
+
+	@GetMapping(value = "/users", params = "name")
+	public ResponseEntity<User> getUserByName(@RequestParam("name") String userName) {
+		User user = userService.getUserByName(userName);
+		if (user != null) {
+			return new ResponseEntity<User>(
+					user,
+					headerGenerator.getHeadersForSuccessGetMethod(),
+					HttpStatus.OK);
+		}
+		return new ResponseEntity<User>(
+				headerGenerator.getHeadersForError(),
+				HttpStatus.NOT_FOUND);
+	}
+
+	@GetMapping(value = "/users/{id}")
+	public ResponseEntity<User> getUserById(@PathVariable("id") Long id) {
+		User user = userService.getUserById(id);
+		if (user != null) {
+			return new ResponseEntity<User>(
+					user,
+					headerGenerator.getHeadersForSuccessGetMethod(),
+					HttpStatus.OK);
+		}
+		return new ResponseEntity<User>(
+				headerGenerator.getHeadersForError(),
+				HttpStatus.NOT_FOUND);
+	}
+
+	@PostMapping(value = "/users")
+	public ResponseEntity<User> addUser(@RequestBody User user, HttpServletRequest request) {
+		if (user != null)
+			try {
+				userService.saveUser(user);
+				return new ResponseEntity<User>(
+						user,
+						headerGenerator.getHeadersForSuccessPostMethod(request, user.getId()),
+						HttpStatus.CREATED);
+			} catch (Exception e) {
+				e.printStackTrace();
+				return new ResponseEntity<User>(HttpStatus.INTERNAL_SERVER_ERROR);
+			}
+		return new ResponseEntity<User>(HttpStatus.BAD_REQUEST);
+	}
 }

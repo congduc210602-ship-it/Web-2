@@ -13,6 +13,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -36,44 +38,43 @@ public class OrderController {
     // Đã tiêm PaymentClient mới vào đây
     @Autowired
     private PaymentClient paymentClient;
-    
+
     @PostMapping(value = "/order/{userId}")
     public ResponseEntity<?> saveOrder(
             @PathVariable("userId") Long userId,
             @RequestHeader(value = "Cookie") String cartId,
-            HttpServletRequest request){
-        
+            HttpServletRequest request) {
+
         List<Item> cart = cartService.getAllItemsFromCart(cartId);
-        User user = null;   
+        User user = null;
         try {
             // Lấy thông tin User để gán vào Order
-            user = userClient.getUserById(userId).getBody(); 
+            user = userClient.getUserById(userId).getBody();
         } catch (Exception e) {
-             System.out.println("Không tìm thấy User!");
+            System.out.println("Không tìm thấy User!");
         }
 
-        if(cart != null && user != null && !cart.isEmpty()) {
+        if (cart != null && user != null && !cart.isEmpty()) {
             Order order = this.createOrder(cart, user);
             try {
                 // 1. Lưu đơn hàng tạm để lấy Order ID
                 orderService.saveOrder(order);
-                
+
                 // 2. Gọi thẳng sang PAYMENT SERVICE để xử lý thanh toán
                 try {
                     ResponseEntity<String> paymentResponse = paymentClient.processPayment(
-                            userId, 
-                            order.getId(), 
-                            order.getTotal()
-                    );
-                    
+                            userId,
+                            order.getId(),
+                            order.getTotal());
+
                     // Nếu Payment Service xử lý thành công (Trả về 200 OK)
                     if (paymentResponse.getStatusCode() == HttpStatus.OK) {
                         order.setStatus("PAID"); // Đổi trạng thái thành Đã thanh toán
                         orderService.saveOrder(order); // Lưu cập nhật lại vào DB
                         cartService.deleteCart(cartId); // Xóa giỏ hàng
-                        
+
                         return new ResponseEntity<Order>(
-                                order, 
+                                order,
                                 headerGenerator.getHeadersForSuccessPostMethod(request, order.getId()),
                                 HttpStatus.CREATED);
                     }
@@ -81,10 +82,10 @@ public class OrderController {
                     // Nếu Payment Service báo lỗi (không đủ tiền sẽ quăng lỗi 400 Bad Request)
                     order.setStatus("PAYMENT_FAILED"); // Cập nhật đơn thành Thanh toán thất bại
                     orderService.saveOrder(order);
-                    
+
                     // Trả về thông báo lỗi cho người dùng
                     return new ResponseEntity<String>(
-                            "Thanh toán thất bại! Số dư trong tài khoản không đủ.", 
+                            "Thanh toán thất bại! Số dư trong tài khoản không đủ.",
                             HttpStatus.BAD_REQUEST);
                 }
             } catch (Exception ex) {
@@ -94,12 +95,12 @@ public class OrderController {
                         HttpStatus.INTERNAL_SERVER_ERROR);
             }
         }
-  
+
         return new ResponseEntity<Order>(
                 headerGenerator.getHeadersForError(),
                 HttpStatus.NOT_FOUND);
     }
-    
+
     private Order createOrder(List<Item> cart, User user) {
         Order order = new Order();
         order.setItems(cart);
@@ -115,9 +116,9 @@ public class OrderController {
     // ==========================================
 
     @GetMapping(value = "/orders")
-    public ResponseEntity<List<Order>> getAllOrders(){
+    public ResponseEntity<List<Order>> getAllOrders() {
         List<Order> orders = orderService.getAllOrders();
-        if(!orders.isEmpty()) {
+        if (!orders.isEmpty()) {
             return new ResponseEntity<List<Order>>(
                     orders,
                     headerGenerator.getHeadersForSuccessGetMethod(),
@@ -129,9 +130,9 @@ public class OrderController {
     }
 
     @GetMapping(value = "/orders/{id}")
-    public ResponseEntity<Order> getOrderById(@PathVariable("id") Long id){
+    public ResponseEntity<Order> getOrderById(@PathVariable("id") Long id) {
         Order order = orderService.getOrderById(id);
-        if(order != null) {
+        if (order != null) {
             return new ResponseEntity<Order>(
                     order,
                     headerGenerator.getHeadersForSuccessGetMethod(),
@@ -144,12 +145,12 @@ public class OrderController {
 
     @PostMapping(value = "/orders/{id}/status")
     public ResponseEntity<Order> updateOrderStatus(
-            @PathVariable("id") Long id, 
+            @PathVariable("id") Long id,
             @RequestParam("status") String status,
             HttpServletRequest request) {
-        
+
         Order order = orderService.getOrderById(id);
-        if(order != null) {
+        if (order != null) {
             try {
                 order.setStatus(status);
                 orderService.saveOrder(order);
@@ -167,5 +168,35 @@ public class OrderController {
         return new ResponseEntity<Order>(
                 headerGenerator.getHeadersForError(),
                 HttpStatus.NOT_FOUND);
+    }
+
+    // === API THỐNG KÊ CHO DASHBOARD ===
+
+    @GetMapping(value = "/orders/dashboard/count")
+    public ResponseEntity<Long> getOrdersCount() {
+        try {
+            long count = orderService.getAllOrders().size();
+            return new ResponseEntity<>(count, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(0L, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping(value = "/orders/dashboard/revenue")
+    public ResponseEntity<BigDecimal> getTotalRevenue() {
+        try {
+            List<Order> orders = orderService.getAllOrders();
+            BigDecimal totalRevenue = BigDecimal.ZERO;
+            for (Order order : orders) {
+                if ("PAID".equals(order.getStatus()) || "COMPLETED".equals(order.getStatus())) {
+                    if (order.getTotal() != null) {
+                        totalRevenue = totalRevenue.add(order.getTotal());
+                    }
+                }
+            }
+            return new ResponseEntity<>(totalRevenue, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(BigDecimal.ZERO, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 }
