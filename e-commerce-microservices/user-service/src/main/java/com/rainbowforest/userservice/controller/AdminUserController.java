@@ -42,7 +42,8 @@ public class AdminUserController {
                     user.getUserDetails().setUser(user);
                 }
                 userService.saveUser(user);
-                return new ResponseEntity<>(user, headerGenerator.getHeadersForSuccessPostMethod(request, user.getId()), HttpStatus.CREATED);
+                return new ResponseEntity<>(user, headerGenerator.getHeadersForSuccessPostMethod(request, user.getId()),
+                        HttpStatus.CREATED);
             } catch (Exception e) {
                 e.printStackTrace();
                 return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -53,7 +54,8 @@ public class AdminUserController {
 
     // === 3. CẬP NHẬT THÔNG TIN NGƯỜI DÙNG ===
     @PutMapping("/{id}")
-    public ResponseEntity<User> updateUserByAdmin(@PathVariable("id") Long id, @RequestBody User updatedUser, HttpServletRequest request) {
+    public ResponseEntity<User> updateUserByAdmin(@PathVariable("id") Long id, @RequestBody User updatedUser,
+            HttpServletRequest request) {
         User existingUser = userService.getUserById(id);
         if (existingUser != null) {
             try {
@@ -63,17 +65,17 @@ public class AdminUserController {
                     existingUser.setUserPassword(updatedUser.getUserPassword());
                 }
                 existingUser.setActive(updatedUser.getActive());
-                
+
                 // Cập nhật UserDetails
                 if (updatedUser.getUserDetails() != null) {
                     UserDetails newDetails = updatedUser.getUserDetails();
                     UserDetails currentDetails = existingUser.getUserDetails();
-                    
+
                     if (currentDetails == null) {
                         currentDetails = new UserDetails();
                         existingUser.setUserDetails(currentDetails);
                     }
-                    
+
                     currentDetails.setFirstName(newDetails.getFirstName());
                     currentDetails.setLastName(newDetails.getLastName());
                     currentDetails.setEmail(newDetails.getEmail());
@@ -81,14 +83,15 @@ public class AdminUserController {
                     // ... (Thêm các trường khác nếu cần thiết trên UI)
                     currentDetails.setUser(existingUser);
                 }
-                
+
                 // Cập nhật Role
-                if(updatedUser.getRole() != null) {
+                if (updatedUser.getRole() != null) {
                     existingUser.setRole(updatedUser.getRole());
                 }
 
                 userService.saveUser(existingUser);
-                return new ResponseEntity<>(existingUser, headerGenerator.getHeadersForSuccessPostMethod(request, existingUser.getId()), HttpStatus.OK);
+                return new ResponseEntity<>(existingUser,
+                        headerGenerator.getHeadersForSuccessPostMethod(request, existingUser.getId()), HttpStatus.OK);
 
             } catch (Exception e) {
                 e.printStackTrace();
@@ -100,7 +103,8 @@ public class AdminUserController {
 
     // === 4. KHÓA / MỞ KHÓA TÀI KHOẢN (ACTIVE STATUS) ===
     @PatchMapping("/{id}/status")
-    public ResponseEntity<Void> toggleUserStatus(@PathVariable("id") Long id, @RequestParam("active") int activeStatus) {
+    public ResponseEntity<Void> toggleUserStatus(@PathVariable("id") Long id,
+            @RequestParam("active") int activeStatus) {
         User user = userService.getUserById(id);
         if (user != null) {
             try {
@@ -113,5 +117,16 @@ public class AdminUserController {
             }
         }
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
+
+    @GetMapping("/dashboard/count")
+    public ResponseEntity<Long> getTotalUsersCount() {
+        try {
+            long count = userService.getAllUsers().size();
+            return new ResponseEntity<>(count, HttpStatus.OK);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(0L, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 }

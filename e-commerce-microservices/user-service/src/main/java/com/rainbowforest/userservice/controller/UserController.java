@@ -99,20 +99,18 @@ public class UserController {
 		User user = userService.checkLogin(loginRequest.getUserName(), loginRequest.getUserPassword());
 
 		if (user != null) {
-			// Kiểm tra xem có phải ADMIN không
-			if (user.getRole() != null && user.getRole().getRoleName().equals("ADMIN")) {
-				String token = jwtUtils.generateToken(user.getUserName());
+			// Khách hàng hoặc Admin đều đăng nhập thành công
+			String token = jwtUtils.generateToken(user.getUserName());
 
-				// Trả về cả thông tin user và token cho React cất vào túi
-				java.util.Map<String, Object> response = new java.util.HashMap<>();
-				response.put("token", token);
-				response.put("userName", user.getUserName());
-				response.put("role", user.getRole());
+			// Lấy role của user (nếu không có thì mặc định là USER)
+			String roleName = (user.getRole() != null) ? user.getRole().getRoleName() : "USER";
 
-				return new ResponseEntity<>(response, HttpStatus.OK);
-			} else {
-				return new ResponseEntity<>("Bạn không có quyền truy cập Admin!", HttpStatus.FORBIDDEN);
-			}
+			java.util.Map<String, Object> response = new java.util.HashMap<>();
+			response.put("token", token);
+			response.put("userName", user.getUserName());
+			response.put("role", roleName); // Trả về vai trò thật của họ
+
+			return new ResponseEntity<>(response, HttpStatus.OK);
 		}
 		return new ResponseEntity<>("Sai tài khoản hoặc mật khẩu!", HttpStatus.UNAUTHORIZED);
 	}
