@@ -32,15 +32,14 @@ public class RecommendationController {
 	@GetMapping(value = "/recommendations")
 	private ResponseEntity<List<Recommendation>> getAllRating(@RequestParam("name") String productName) {
 		List<Recommendation> recommendations = recommendationService.getAllRecommendationByProductName(productName);
-		if (!recommendations.isEmpty()) {
-			return new ResponseEntity<List<Recommendation>>(
-					recommendations,
-					headerGenerator.getHeadersForSuccessGetMethod(),
-					HttpStatus.OK);
-		}
+
+		// SỬA LẠI LOGIC Ở ĐÂY:
+		// Không kiểm tra isEmpty() nữa, luôn trả về OK.
+		// Nếu không có đánh giá, Frontend sẽ nhận được danh sách rỗng [], rất an toàn.
 		return new ResponseEntity<List<Recommendation>>(
-				headerGenerator.getHeadersForError(),
-				HttpStatus.NOT_FOUND);
+				recommendations,
+				headerGenerator.getHeadersForSuccessGetMethod(),
+				HttpStatus.OK);
 	}
 
 	// ==========================================

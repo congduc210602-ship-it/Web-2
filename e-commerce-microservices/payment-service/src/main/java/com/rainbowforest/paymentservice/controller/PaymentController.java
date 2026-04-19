@@ -15,11 +15,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.UnsupportedEncodingException;
+import java.io.IOException;
+import javax.servlet.http.HttpServletResponse;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -77,40 +80,41 @@ public class PaymentController {
         vnp_Params.put("vnp_Amount", String.valueOf(amount * 100));
         vnp_Params.put("vnp_CurrCode", "VND");
         vnp_Params.put("vnp_TxnRef", vnp_TxnRef);
-        vnp_Params.put("vnp_OrderInfo", "Thanh toan don hang " + orderId);
+        vnp_Params.put("vnp_OrderInfo", "ThanhToan_" + orderId);
         vnp_Params.put("vnp_OrderType", "other");
         vnp_Params.put("vnp_Locale", "vn");
         vnp_Params.put("vnp_ReturnUrl", VNPayConfig.vnp_Returnurl);
-        // Đã sửa lại để lấy IP thực tế thay vì hardcode 127.0.0.1
-        vnp_Params.put("vnp_IpAddr", VNPayConfig.getIpAddress(req)); 
 
-        Calendar cld = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
+        // Gắn cứng IP localhost để tránh lỗi IPv6 (0:0:0:0:0:0:0:1) trên máy dev
+        vnp_Params.put("vnp_IpAddr", "127.0.0.1");
+
+        Calendar cld = Calendar.getInstance(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
         vnp_Params.put("vnp_CreateDate", formatter.format(cld.getTime()));
 
-        // Sắp xếp tham số theo Alphabet
         List<String> fieldNames = new ArrayList<>(vnp_Params.keySet());
         Collections.sort(fieldNames);
 
         StringBuilder hashData = new StringBuilder();
         StringBuilder query = new StringBuilder();
         Iterator<String> itr = fieldNames.iterator();
-        
-        // Vòng lặp chuẩn VNPay dùng Iterator để tránh lỗi dư dấu &
+
         while (itr.hasNext()) {
             String fieldName = itr.next();
             String fieldValue = vnp_Params.get(fieldName);
+
             if ((fieldValue != null) && (fieldValue.length() > 0)) {
-                // Build hash data
+                // BẮT BUỘC ENCODE CẢ CHUỖI HASH VÀ QUERY
+                String encodedValue = URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.toString());
+
                 hashData.append(fieldName);
                 hashData.append('=');
-                hashData.append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.toString()));
-                
-                // Build query
+                hashData.append(encodedValue);
+
                 query.append(URLEncoder.encode(fieldName, StandardCharsets.US_ASCII.toString()));
                 query.append('=');
-                query.append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.toString()));
-                
+                query.append(encodedValue);
+
                 if (itr.hasNext()) {
                     query.append('&');
                     hashData.append('&');
@@ -120,21 +124,66 @@ public class PaymentController {
 
         String queryUrl = query.toString();
         String vnp_SecureHash = VNPayConfig.hmacSHA512(VNPayConfig.vnp_HashSecret, hashData.toString());
-        queryUrl += "&vnp_SecureHash=" + vnp_SecureHash;
 
-        return ResponseEntity.ok(VNPayConfig.vnp_PayUrl + "?" + queryUrl);
+        // TUYỆT ĐỐI KHÔNG NỐI THÊM vnp_SecureHashType VÀO ĐÂY NỮA
+        queryUrl += "&vnp_SecureHash=" + vnp_SecureHash;
+        String paymentUrl = VNPayConfig.vnp_PayUrl + "?" + queryUrl;
+
+        return ResponseEntity.ok(paymentUrl);
     }
 
     // Endpoint nhận kết quả trả về từ VNPay
     @GetMapping("/vnpay-callback")
-    public ResponseEntity<String> vnpayCallback(HttpServletRequest request) {
-        String status = request.getParameter("vnp_ResponseCode");
-        if ("00".equals(status)) {
-            // THANH TOÁN THÀNH CÔNG
-            // Ở đây Đức có thể gọi Repository lưu vào DB Payment với status SUCCESS
-            return ResponseEntity.ok("THANH TOAN THANH CONG!");
+    public void vnpayCallback(HttpServletRequest request, HttpServletResponse response) throws IOException {
+
+        Map<String, String> fields = new HashMap<>();
+
+        for (Enumeration<String> params = request.getParameterNames(); params.hasMoreElements();) {
+            String fieldName = params.nextElement();
+            String fieldValue = request.getParameter(fieldName);
+
+            if (fieldValue != null && !fieldValue.isEmpty()) {
+                fields.put(fieldName, fieldValue);
+            }
+        }
+
+        String vnp_SecureHash = fields.remove("vnp_SecureHash");
+        fields.remove("vnp_SecureHashType");
+
+        List<String> fieldNames = new ArrayList<>(fields.keySet());
+        Collections.sort(fieldNames);
+
+        StringBuilder hashData = new StringBuilder();
+
+        for (String name : fieldNames) {
+            hashData.append(name).append('=').append(fields.get(name)).append('&');
+        }
+
+        hashData.deleteCharAt(hashData.length() - 1);
+
+        String signValue = VNPayConfig.hmacSHA512(
+                VNPayConfig.vnp_HashSecret,
+                hashData.toString());
+
+        // === ĐƯỜNG DẪN FRONTEND CỦA BẠN ===
+        String frontendUrl = "http://localhost:3000/cart";
+
+        // === SỬA LẠI PHẦN TRẢ VỀ: DÙNG SEND REDIRECT ===
+        if (signValue.equals(vnp_SecureHash)) {
+            String responseCode = request.getParameter("vnp_ResponseCode");
+            if ("00".equals(responseCode)) {
+                // THANH TOÁN THÀNH CÔNG
+                // TODO: Gọi Repository lưu DB trạng thái "SUCCESS" ở đây
+
+                // Đá về React kèm param success
+                response.sendRedirect(frontendUrl + "?payment_status=success");
+            } else {
+                // Khách hàng hủy giao dịch hoặc lỗi thẻ
+                response.sendRedirect(frontendUrl + "?payment_status=failed");
+            }
         } else {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("THANH TOAN THAT BAI!");
+            // Chữ ký không hợp lệ (Bị hacker sửa URL)
+            response.sendRedirect(frontendUrl + "?payment_status=invalid");
         }
     }
 }

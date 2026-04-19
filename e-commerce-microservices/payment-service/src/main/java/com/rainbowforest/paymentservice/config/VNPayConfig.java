@@ -11,8 +11,8 @@ public class VNPayConfig {
     public static String vnp_Returnurl = "http://localhost:8815/payment/vnpay-callback";
 
     // ĐÂY LÀ BỘ MÃ CHUẨN - KHÔNG ĐƯỢC THAY ĐỔI
-    public static String vnp_TmnCode = "M8SX78DI";
-    public static String vnp_HashSecret = "RI27LN52Q6DZSQRPU4DIFVIO5U7F247J";
+    public static String vnp_TmnCode = "LBRHRJD6";
+    public static String vnp_HashSecret = "MAQJE5756WWKUA1BPTXNAJ71V510N6M7";
 
     public static String hmacSHA512(final String key, final String data) {
         try {

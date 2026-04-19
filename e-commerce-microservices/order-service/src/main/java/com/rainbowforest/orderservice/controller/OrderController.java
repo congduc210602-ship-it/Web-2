@@ -101,6 +101,40 @@ public class OrderController {
                 HttpStatus.NOT_FOUND);
     }
 
+    // === API MỚI DÀNH CHO REACT CHECKOUT ===
+    @PostMapping(value = "/order/checkout/{userId}")
+    public ResponseEntity<?> placeOrderFromReact(
+            @PathVariable("userId") Long userId,
+            @RequestBody Order orderRequest,
+            HttpServletRequest request) {
+        try {
+            User user = userClient.getUserById(userId).getBody();
+            if (user == null)
+                return new ResponseEntity<>("Không tìm thấy User!", HttpStatus.NOT_FOUND);
+
+            orderRequest.setUser(user);
+            orderRequest.setOrderedDate(LocalDate.now());
+
+            // Xử lý Status dựa trên Payment Method
+            if ("VNPAY".equals(orderRequest.getPaymentMethod())) {
+                orderRequest.setStatus("Đang chờ thanh toán");
+            } else {
+                orderRequest.setStatus("Đang xử lý"); // COD
+            }
+
+            if (orderRequest.getItems() != null) {
+                orderRequest.setTotal(OrderUtilities.countTotalPrice(orderRequest.getItems()));
+            }
+
+            orderService.saveOrder(orderRequest);
+
+            return new ResponseEntity<>(orderRequest, HttpStatus.CREATED);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     private Order createOrder(List<Item> cart, User user) {
         Order order = new Order();
         order.setItems(cart);

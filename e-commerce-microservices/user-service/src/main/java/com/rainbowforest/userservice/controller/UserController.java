@@ -99,16 +99,16 @@ public class UserController {
 		User user = userService.checkLogin(loginRequest.getUserName(), loginRequest.getUserPassword());
 
 		if (user != null) {
-			// Khách hàng hoặc Admin đều đăng nhập thành công
 			String token = jwtUtils.generateToken(user.getUserName());
-
-			// Lấy role của user (nếu không có thì mặc định là USER)
 			String roleName = (user.getRole() != null) ? user.getRole().getRoleName() : "USER";
 
 			java.util.Map<String, Object> response = new java.util.HashMap<>();
+			// === BỔ SUNG DÒNG NÀY ĐỂ TRẢ VỀ ID ===
+			response.put("id", user.getId());
+			// =====================================
 			response.put("token", token);
 			response.put("userName", user.getUserName());
-			response.put("role", roleName); // Trả về vai trò thật của họ
+			response.put("role", roleName);
 
 			return new ResponseEntity<>(response, HttpStatus.OK);
 		}
